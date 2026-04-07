@@ -2,10 +2,17 @@ version: '3.8'
 
 services:
   tarantool:
-    image: tarantool/tarantool:2.11
+    image: tarantool/tarantool:3.2
+    environment:
+      - TT_MEMTX_MEMORY=1073741824
     container_name: tarantool-kv
     ports:
       - "3301:3301"
     volumes:
-      - ./tarantool:/opt/tarantool
-    command: tarantool /opt/tarantool/init.lua
+      - ./tarantool/init.lua:/opt/tarantool/init.lua
+      - tarantool_data:/var/lib/tarantool
+    command: [ "tarantool", "/opt/tarantool/init.lua" ]
+    restart: unless-stopped
+
+volumes:
+  tarantool_data:

@@ -8,6 +8,13 @@ box.space.kv:format({
 })
 
 box.space.kv:create_index('primary', {
+  type = 'hash',
+  parts = { 'key' },
+  if_not_exists = true
+})
+
+box.space.kv:create_index('range_idx', {
+    type = 'tree',
     parts = { 'key' },
     if_not_exists = true
 })
