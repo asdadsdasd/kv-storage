@@ -1,24 +1,33 @@
-package com.example;
+package com.example.kv;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
+import com.example.kv.config.TarantoolConfig;
+import com.example.kv.repository.KvRepository;
+import com.example.kv.service.KvGrpcService;
+import io.grpc.Server;
+import io.grpc.ServerBuilder;
+import io.grpc.protobuf.services.ProtoReflectionService;
+
 public class Main {
     public static void main(String[] args) {
-        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-        // to see how IntelliJ IDEA suggests fixing it.
-        System.out.printf("Hello and welcome!");
+        try (TarantoolConfig config = new TarantoolConfig()) {
+            KvRepository repository = new KvRepository(config.getClient());
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            System.out.println("i = " + i);
-            TarantoolRepository repo = new TarantoolRepository();
+            Server server = ServerBuilder.forPort(9090)
+                    .addService(new KvGrpcService(repository))
+                    .addService(ProtoReflectionService.newInstance())
+                    .build();
 
-            repo.put("key1", "hello".getBytes());
+            server.start();
+            System.out.println("gRPC Server started on port 9090");
 
-            byte[] value = repo.get("key1");
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                System.out.println("Stopping gRPC server...");
+                server.shutdown();
+            }));
 
-            System.out.println(new String(value));
+            server.awaitTermination();
+        } catch (Exception e) {
+            System.err.println("Critical error: " + e.getMessage());
         }
     }
 }
